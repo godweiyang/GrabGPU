@@ -1,5 +1,10 @@
 # Grab the GPUs to run your own code!
 
+## Download
+```
+wget https://github.com/godweiyang/GrabGPU/blob/master/grab_gpu
+```
+
 ## Run default script
 **Usage:**  
 ```shell
