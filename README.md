@@ -6,7 +6,7 @@
 ./grab_gpu <GPU Memory (GB)> <Occupied Time (h)> <GPU ID>
 ```
 
-**Example:**. 
+**Example:**  
 Occupy 16 GB GPU memory for 24 hours using GPU 0, 1, 2, 3 to run default script.
 ```shell
 ./grab_gpu 16 24 0,1,2,3
@@ -19,7 +19,7 @@ Occupy 16 GB GPU memory for 24 hours using GPU 0, 1, 2, 3 to run default script.
 ./grab_gpu <GPU Memory (GB)> <Occupied Time (h)> <GPU ID> <OPTIONAL: Script Path>
 ```
 
-**Example:**. 
+**Example:**  
 Occupy 16 GB GPU memory using GPU 0, 1, 2, 3 to run your own `run.sh`. Note that the occupied time here is useless.
 ```shell
 ./grab_gpu 16 24 0,1,2,3 run.sh
