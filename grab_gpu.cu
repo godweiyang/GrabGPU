@@ -149,9 +149,9 @@ void allocate_mem(char** array, size_t occupy_size, std::vector<int>& gpu_ids) {
     bool all_allocated = true;
     for (int id : gpu_ids) {
       cudaSetDevice(id);
+      cudaError_t status = cudaMalloc(&array[id], occupy_size);
       size_t total_size, avail_size;
       cudaMemGetInfo(&avail_size, &total_size);
-      cudaError_t status = cudaMalloc(&array[id], occupy_size);
       if (status != cudaSuccess) {
         printf(
             "GPU-%d: Failed to allocate %.2f GB GPU memory (%.2f GB "
