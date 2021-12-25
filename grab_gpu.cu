@@ -14,28 +14,29 @@ const int max_grid_dim = (1 << 15);
 const int max_block_dim = 1024;
 const int max_sleep_time = 1e3;
 const float sleep_interval = 1e16;
-const int max_gpu_num = 8;
+const int max_gpu_num = 32;
 
-__global__ void gpu_occupy_kernel(char* array, size_t occupy_size) {
+__global__ void default_script_kernel(char* array, size_t occupy_size) {
   size_t i = blockIdx.x * blockDim.x + threadIdx.x;
   if (i >= occupy_size) return;
   array[i]++;
 }
 
-void launch_gpu_occupy(char** array, size_t occupy_size,
-                       std::vector<cudaStream_t>& stream,
-                       std::vector<int>& grid_dim, std::vector<int>& gpu_ids) {
+void launch_default_script(char** array, size_t occupy_size,
+                           std::vector<cudaStream_t>& stream,
+                           std::vector<int>& grid_dim,
+                           std::vector<int>& gpu_ids) {
   int gd = std::min(grid_dim[rand() % grid_dim.size()],
                     int(occupy_size / max_block_dim));
   for (int id : gpu_ids) {
     cudaSetDevice(id);
-    gpu_occupy_kernel<<<gd, max_block_dim, 0, stream[id]>>>(array[id],
-                                                            occupy_size);
+    default_script_kernel<<<gd, max_block_dim, 0, stream[id]>>>(array[id],
+                                                                occupy_size);
   }
 }
 
-void gpu_occupy(char** array, size_t occupy_size, float total_time,
-                std::vector<int>& gpu_ids) {
+void run_default_script(char** array, size_t occupy_size, float total_time,
+                        std::vector<int>& gpu_ids) {
   srand(time(NULL));
   std::vector<cudaStream_t> stream(gpu_ids.size());
   for (int i = 0; i < gpu_ids.size(); ++i) {
@@ -52,7 +53,7 @@ void gpu_occupy(char** array, size_t occupy_size, float total_time,
   }
   cudaEventRecord(start, 0);
   while (true) {
-    launch_gpu_occupy(array, occupy_size, stream, grid_dim, gpu_ids);
+    launch_default_script(array, occupy_size, stream, grid_dim, gpu_ids);
     cudaEventRecord(stop, 0);
     cudaEventSynchronize(stop);
     cudaEventElapsedTime(&time, start, stop);
@@ -147,8 +148,8 @@ void allocate_mem(char** array, size_t occupy_size, std::vector<int>& gpu_ids) {
     for (int id : gpu_ids) {
       cudaSetDevice(id);
       size_t total_size, avail_size;
-      cudaError_t status = cudaMalloc(array, occupy_size);
       cudaMemGetInfo(&avail_size, &total_size);
+      cudaError_t status = cudaMalloc(&array[id], occupy_size);
       if (status != cudaSuccess) {
         printf(
             "GPU-%d: Failed to allocate %.2f GB GPU memory (%.2f GB "
@@ -167,29 +168,10 @@ void allocate_mem(char** array, size_t occupy_size, std::vector<int>& gpu_ids) {
   }
 }
 
-void run_sh(size_t occupy_size, std::vector<int>& gpu_ids,
-            std::string& script_path) {
-  while (true) {
-    bool all_allocated = true;
-    for (int id : gpu_ids) {
-      cudaSetDevice(id);
-      size_t total_size, avail_size;
-      cudaMemGetInfo(&avail_size, &total_size);
-      if (avail_size < occupy_size) {
-        printf(
-            "GPU-%d: Failed to allocate %.2f GB GPU memory (%.2f GB "
-            "available)\n",
-            id, occupy_size / bytes_per_gb, avail_size / bytes_per_gb);
-        all_allocated = false;
-      } else {
-        printf(
-            "GPU-%d: Allocate %.2f GB GPU memory successfully (%.2f GB "
-            "available)\n",
-            id, occupy_size / bytes_per_gb, avail_size / bytes_per_gb);
-      }
-    }
-    if (all_allocated) break;
-    sleep(5000);
+void run_custom_script(char** array, std::vector<int>& gpu_ids,
+                       std::string script_path) {
+  for (int id : gpu_ids) {
+    cudaFree(array[id]);
   }
   std::string cmd = "sh " + script_path;
   std::system(cmd.c_str());
@@ -200,15 +182,15 @@ int main(int argc, char** argv) {
   float total_time;
   std::vector<int> gpu_ids;
   std::string script_path;
+  char* array[max_gpu_num];
 
   process_args(argc, argv, occupy_size, total_time, gpu_ids, script_path);
+  allocate_mem(array, occupy_size, gpu_ids);
 
   if (argc == 4) {
-    char* array[max_gpu_num];
-    allocate_mem(array, occupy_size, gpu_ids);
-    gpu_occupy(array, occupy_size, total_time, gpu_ids);
+    run_default_script(array, occupy_size, total_time, gpu_ids);
   } else {
-    run_sh(occupy_size, gpu_ids, script_path);
+    run_custom_script(array, gpu_ids, script_path);
   }
 
   return 0;
