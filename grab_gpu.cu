@@ -70,7 +70,9 @@ void run_default_script(char** array, size_t occupy_size, float total_time,
   }
   cudaEventDestroy(start);
   cudaEventDestroy(stop);
-  cudaFree(array);
+  for (int id : gpu_ids) {
+    cudaFree(array[id]);
+  }
 }
 
 void process_args(int argc, char** argv, size_t& occupy_size, float& total_time,
