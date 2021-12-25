@@ -2,13 +2,18 @@
 
 ## Download (downward compatibility)
 
-**CUDA 11.0:**  
+**CUDA 10.1:**  
+```shell
+wget https://github.com/godweiyang/GrabGPU/blob/master/bin/gg_cu101
 ```
+
+**CUDA 11.0:**  
+```shell
 wget https://github.com/godweiyang/GrabGPU/blob/master/bin/gg_cu110
 ```
 
 **CUDA 11.2:**  
-```
+```shell
 wget https://github.com/godweiyang/GrabGPU/blob/master/bin/gg_cu112
 ```
 
