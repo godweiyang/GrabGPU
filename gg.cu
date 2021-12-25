@@ -135,6 +135,7 @@ void process_args(int argc, char** argv, size_t& occupy_size, float& total_time,
       printf("%d%c", gpu_ids[id], ",\n"[id == gpu_ids.size() - 1]);
     }
   } else {
+    script_path = argv[4];
     printf("Script path: %s\n", script_path.c_str());
   }
 }
