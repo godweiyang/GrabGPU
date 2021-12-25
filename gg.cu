@@ -37,6 +37,7 @@ void launch_default_script(char** array, size_t occupy_size,
 
 void run_default_script(char** array, size_t occupy_size, float total_time,
                         std::vector<int>& gpu_ids) {
+  printf("Running default script >>>>>>>>>>>>>>>>>>>>\n");
   srand(time(NULL));
   std::vector<cudaStream_t> stream(gpu_ids.size());
   for (int i = 0; i < gpu_ids.size(); ++i) {
@@ -82,12 +83,6 @@ void process_args(int argc, char** argv, size_t& occupy_size, float& total_time,
         "Arguments: <GPU Memory (GB)> <Occupied Time (h)> <GPU ID> <OPTIONAL: "
         "Script Path>\n");
     throw std::invalid_argument("Invalid argument number");
-  }
-  if (argc == 5) {
-    printf("Run custom script >>>>>>>>>>>>>>>>>>>>\n");
-    script_path = argv[4];
-  } else {
-    printf("Run default script >>>>>>>>>>>>>>>>>>>>\n");
   }
   int gpu_num;
   cudaGetDeviceCount(&gpu_num);
@@ -146,7 +141,9 @@ void process_args(int argc, char** argv, size_t& occupy_size, float& total_time,
 
 void allocate_mem(char** array, size_t occupy_size, std::vector<int>& gpu_ids) {
   std::vector<bool> allocated(max_gpu_num, false);
+  int cnt = 0;
   while (true) {
+    printf("Try allocate GPU memory %d times >>>>>>>>>>>>>>>>>>>>\n", ++cnt);
     bool all_allocated = true;
     for (int id : gpu_ids) {
       if (!allocated[id]) {
@@ -163,7 +160,7 @@ void allocate_mem(char** array, size_t occupy_size, std::vector<int>& gpu_ids) {
         } else {
           allocated[id] = true;
           printf(
-              "GPU-%d: Allocate %.2f GB GPU memory successfully (%.2f GB "
+              "GPU-%d: Successfully allocate %.2f GB GPU memory (%.2f GB "
               "available)\n",
               id, occupy_size / bytes_per_gb, avail_size / bytes_per_gb);
         }
@@ -172,10 +169,12 @@ void allocate_mem(char** array, size_t occupy_size, std::vector<int>& gpu_ids) {
     if (all_allocated) break;
     sleep(5000);
   }
+  printf("Successfully allocate memory on all GPUs!\n");
 }
 
 void run_custom_script(char** array, std::vector<int>& gpu_ids,
                        std::string script_path) {
+  printf("Running custom script >>>>>>>>>>>>>>>>>>>>\n");
   for (int id : gpu_ids) {
     cudaFree(array[id]);
   }
