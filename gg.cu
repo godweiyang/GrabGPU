@@ -117,7 +117,7 @@ void process_args(int argc, char** argv, size_t& occupy_size, float& total_time,
   cudaMemGetInfo(&avail_size, &total_size);
   sscanf(argv[1], "%f", &occupy_mem);
   sscanf(argv[2], "%f", &total_time);
-  if (occupy_mem < 0) {
+  if (occupy_mem <= 0) {
     printf("GPU memory must be positive: %.2f\n", occupy_mem);
     throw std::invalid_argument("Invalid GPU memory");
   }
