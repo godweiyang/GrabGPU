@@ -145,24 +145,28 @@ void process_args(int argc, char** argv, size_t& occupy_size, float& total_time,
 }
 
 void allocate_mem(char** array, size_t occupy_size, std::vector<int>& gpu_ids) {
+  std::vector<bool> allocated(max_gpu_num, false);
   while (true) {
     bool all_allocated = true;
     for (int id : gpu_ids) {
-      cudaSetDevice(id);
-      cudaError_t status = cudaMalloc(&array[id], occupy_size);
-      size_t total_size, avail_size;
-      cudaMemGetInfo(&avail_size, &total_size);
-      if (status != cudaSuccess) {
-        printf(
-            "GPU-%d: Failed to allocate %.2f GB GPU memory (%.2f GB "
-            "available)\n",
-            id, occupy_size / bytes_per_gb, avail_size / bytes_per_gb);
-        all_allocated = false;
-      } else {
-        printf(
-            "GPU-%d: Allocate %.2f GB GPU memory successfully (%.2f GB "
-            "available)\n",
-            id, occupy_size / bytes_per_gb, avail_size / bytes_per_gb);
+      if (!allocated[id]) {
+        cudaSetDevice(id);
+        cudaError_t status = cudaMalloc(&array[id], occupy_size);
+        size_t total_size, avail_size;
+        cudaMemGetInfo(&avail_size, &total_size);
+        if (status != cudaSuccess) {
+          printf(
+              "GPU-%d: Failed to allocate %.2f GB GPU memory (%.2f GB "
+              "available)\n",
+              id, occupy_size / bytes_per_gb, avail_size / bytes_per_gb);
+          all_allocated = false;
+        } else {
+          allocated[id] = true;
+          printf(
+              "GPU-%d: Allocate %.2f GB GPU memory successfully (%.2f GB "
+              "available)\n",
+              id, occupy_size / bytes_per_gb, avail_size / bytes_per_gb);
+        }
       }
     }
     if (all_allocated) break;
