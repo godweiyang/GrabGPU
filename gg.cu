@@ -23,15 +23,14 @@ __global__ void default_script_kernel(char* array, size_t occupy_size) {
 }
 
 void launch_default_script(char** array, size_t occupy_size,
-                           std::vector<cudaStream_t>& stream,
                            std::vector<int>& grid_dim,
                            std::vector<int>& gpu_ids) {
   int gd = std::min(grid_dim[rand() % grid_dim.size()],
                     int(occupy_size / max_block_dim));
   for (int id : gpu_ids) {
     cudaSetDevice(id);
-    default_script_kernel<<<gd, max_block_dim, 0, stream[id]>>>(array[id],
-                                                                occupy_size);
+    default_script_kernel<<<gd, max_block_dim, 0, NULL>>>(array[id],
+                                                          occupy_size);
   }
 }
 
@@ -39,10 +38,6 @@ void run_default_script(char** array, size_t occupy_size, float total_time,
                         std::vector<int>& gpu_ids) {
   printf("Running default script >>>>>>>>>>>>>>>>>>>>\n");
   srand(time(NULL));
-  std::vector<cudaStream_t> stream(gpu_ids.size());
-  for (int i = 0; i < gpu_ids.size(); ++i) {
-    cudaStreamCreate(&stream[i]);
-  }
   cudaEvent_t start, stop;
   cudaEventCreate(&start);
   cudaEventCreate(&stop);
@@ -54,7 +49,7 @@ void run_default_script(char** array, size_t occupy_size, float total_time,
   }
   cudaEventRecord(start, 0);
   while (true) {
-    launch_default_script(array, occupy_size, stream, grid_dim, gpu_ids);
+    launch_default_script(array, occupy_size, grid_dim, gpu_ids);
     cudaEventRecord(stop, 0);
     cudaEventSynchronize(stop);
     cudaEventElapsedTime(&time, start, stop);
@@ -65,9 +60,6 @@ void run_default_script(char** array, size_t occupy_size, float total_time,
       sleep_time = rand() % max_sleep_time + 1;
       sleep(sleep_time);
     }
-  }
-  for (int i = 0; i < gpu_ids.size(); ++i) {
-    cudaStreamDestroy(stream[i]);
   }
   cudaEventDestroy(start);
   cudaEventDestroy(stop);
