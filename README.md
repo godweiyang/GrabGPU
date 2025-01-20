@@ -4,17 +4,17 @@
 
 **CUDA 10.1:**  
 ```shell
-wget https://github.com/godweiyang/GrabGPU/releases/download/v1.0.0/gg_cu101
+wget https://github.com/godweiyang/GrabGPU/releases/download/v1.0.1/gg_cu101
 ```
 
 **CUDA 11.0:**  
 ```shell
-wget https://github.com/godweiyang/GrabGPU/releases/download/v1.0.0/gg_cu110
+wget https://github.com/godweiyang/GrabGPU/releases/download/v1.0.1/gg_cu110
 ```
 
-**CUDA 11.2:**  
+**CUDA 12.1:**  
 ```shell
-wget https://github.com/godweiyang/GrabGPU/releases/download/v1.0.0/gg_cu112
+wget https://github.com/godweiyang/GrabGPU/releases/download/v1.0.1/gg_cu112
 ```
 
 ## Compile the source code
