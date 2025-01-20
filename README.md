@@ -14,7 +14,7 @@ wget https://github.com/godweiyang/GrabGPU/releases/download/v1.0.1/gg_cu110
 
 **CUDA 12.1:**  
 ```shell
-wget https://github.com/godweiyang/GrabGPU/releases/download/v1.0.1/gg_cu112
+wget https://github.com/godweiyang/GrabGPU/releases/download/v1.0.1/gg_cu121
 ```
 
 ## Compile the source code
