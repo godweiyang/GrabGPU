@@ -4,8 +4,22 @@
 ## 编译方法
 
 ```shell
-nvcc gg.cu -o gg
+nvcc -arch=native gg.cu -o gg
 ```
+
+> **必须带 `-arch`。** 默认脚本使用 Tensor Core（WMMA），Tensor Core 指令必须在编译期就针对具体 GPU 架构生成，而裸 `nvcc gg.cu -o gg` 会按默认的 `sm_52` 编译、无法使用 Tensor Core。
+>
+> `-arch=native` 会自动匹配**当前机器**的 GPU；也可显式指定，例如 H20/H100 用 `-arch=sm_90`、A100 用 `-arch=sm_80`。
+
+**环境要求：**
+
+| 项目 | 要求 |
+| --- | --- |
+| GPU 架构 | **≥ sm_70（Volta）**，即带 Tensor Core 的卡：V100 / T4 / A100 / A10 / L4 / L40 / H100 / H20 等。Pascal（P100/P40）及更老的卡**没有 Tensor Core，编译会直接报错** |
+| CUDA | 已在 CUDA 12.8 验证；≥ 11.0 均可 |
+| 编译标志 | 必须带 `-arch`（见上） |
+
+> ⚠️ **跨机器注意**：`-arch=native` 只编译当前机器的架构。如果在 A 机编译、拿到 B 机（不同型号 GPU）运行，可能报 `no kernel image is available`。跨机使用时请针对目标卡显式指定 `-arch=sm_XX`，或用 `-arch=sm_70` 这类较低架构以向上兼容。
 
 ## 抢占到显卡后自动执行默认脚本
 **使用方法：**  
@@ -20,9 +34,23 @@ nvcc gg.cu -o gg
 ```
 
 **注意：**
-如果显卡利用率不符合预期，请检查输出日志中 `Last Kernel Duration: xx.xxx ms` 显示的时间是否在20-100ms之间，不在的话请修改 `gg.cu` 中下面这行，调整循环次数。
-``` c++
-for (int k = 0; k < 2000; ++k) {
+默认脚本使用 WMMA 16x16x16 FP16 张量核心内核，启动时自动校准每次内核的迭代次数（取多次采样的中位数，抗抖动），使单次运行时间稳定在 ~50ms，以便 DCGM/nvidia-smi 的采样窗口读取到稳定的指标值。无需再手动调整循环次数。
+
+这样做能让以下指标都接近设定的利用率（在 H20 实测，利用率=100% 时）：
+
+| 指标 | 数值 |
+| --- | --- |
+| GPU 利用率 (coarse) | 100% |
+| SM Activity | 99% |
+| SM Occupancy | 98% |
+| Tensor Activity | 95% |
+| HMMA (Tensor Core) | 95% |
+
+设定利用率 < 1.0 时，脚本通过占空比（跑 ~50ms、按 `1/util - 1` 比例休眠）让上述所有指标一起按比例下降，例如 `0.6` 时四项指标都在 ~55-60%。off-time 每轮都根据实测 on-time 重新计算，因此即使单次内核耗时抖动，占空比（也就是指标均值）依然准确。
+
+**验证指标（无需 dcgmi/ncu）：**
+```shell
+nvidia-smi dmon -i 0 --gpm-metrics 2,3,5,7   # SM Activity / SM Occupancy / Tensor / HMMA
 ```
 
 ## 抢占到显卡后自动执行自定义程序（比如训练模型）
